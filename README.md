@@ -1,2 +1,2 @@
 # IPChackathon
-Anirudh, Sriman, Bhaveesh
+Anirudh, Sriman, Yug
