@@ -1,0 +1,38 @@
+import requests
+
+API_KEY = "de2741b1d4b343cb995185040251502"
+CITY = "Bellevue"
+
+URL = f"http://api.weatherapi.com/v1/current.json?key={API_KEY}&q={CITY}&aqi=no"
+
+response = requests.get(URL)
+data = response.json()
+
+if "error" in data:
+    print("Error:", data["error"]["message"])
+else:
+    temp = data["current"]["temp_f"]
+    condition = data["current"]["condition"]["text"]
+    humidity = data["current"]["humidity"]
+    wind_speed = data["current"]["wind_mph"]
+    visibility = data["current"]["vis_miles"]
+    pressure_mb = data["current"]["pressure_mb"]
+    pressure_inhg = round(pressure_mb * 0.02953, 2)
+    uv_index = data["current"]["uv"]
+    air_quality = data.get("current", {}).get("air_quality", {}).get("pm2_5", "N/A")
+    rain_chance = data.get("forecast", {}).get("forecastday", [{}])[0].get("day", {}).get("daily_chance_of_rain", 0)
+    snow_chance = data.get("forecast", {}).get("forecastday", [{}])[0].get("day", {}).get("daily_chance_of_snow", 0)
+
+    print(f"Weather in {CITY}: {condition}")
+    print(f"Temperature: {temp}°F")
+    print(f"Humidity: {humidity}%")
+    print(f"Wind Speed: {wind_speed} mph")
+    print(f"Visibility: {visibility} miles")
+    print(f"Pressure: {pressure_inhg} inHg")
+    print(f"UV Index: {uv_index}")
+    print(f"Air Quality (PM2.5): {air_quality}")
+
+    if rain_chance > 5:
+        print(f"Chance of rain: {rain_chance}%")
+    if snow_chance > 5:
+        print(f"Chance of snow: {snow_chance}%")
