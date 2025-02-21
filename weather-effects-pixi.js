@@ -24,33 +24,74 @@ class PixiWeatherEffects {
         try {
             console.log("Attempting to load textures...");
             
-            const basePath = './texture-packs/kenney_particle-pack/PNG-Transparent';
+            // Note: Using URL-encoded spaces in the path
+            const basePath = './texture%20packs/kenney_particle-pack/PNG%20(Transparent)';
+            console.log("Base path:", basePath);
+            
+            // Log each texture path before loading
+            const texturePaths = {
+                rain: `${basePath}/trace_01.png`,      // Updated to trace_01.png
+                snow: `${basePath}/star_09.png`,       // Updated to star_09.png
+                cloud: `${basePath}/smoke_08.png`,
+                lightning: `${basePath}/spark_05.png`   // Added lightning texture
+            };
+            
+            console.log("Attempting to load textures from:", texturePaths);
             
             this.textures = {
-                rain: await PIXI.Assets.load(`${basePath}/circle_05.png`)
+                rain: await PIXI.Assets.load(texturePaths.rain)
                     .catch(err => {
-                        console.error("Failed to load rain texture:", err);
+                        console.error(`Failed to load rain texture from ${texturePaths.rain}:`, err);
                         return PIXI.Texture.WHITE;
                     }),
-                snow: await PIXI.Assets.load(`${basePath}/star_07.png`)
+                snow: await PIXI.Assets.load(texturePaths.snow)
                     .catch(err => {
-                        console.error("Failed to load snow texture:", err);
+                        console.error(`Failed to load snow texture from ${texturePaths.snow}:`, err);
                         return PIXI.Texture.WHITE;
                     }),
-                cloud: await PIXI.Assets.load(`${basePath}/smoke_08.png`)
+                cloud: await PIXI.Assets.load(texturePaths.cloud)
                     .catch(err => {
-                        console.error("Failed to load cloud texture:", err);
+                        console.error(`Failed to load cloud texture from ${texturePaths.cloud}:`, err);
+                        return PIXI.Texture.WHITE;
+                    }),
+                lightning: await PIXI.Assets.load(texturePaths.lightning)
+                    .catch(err => {
+                        console.error(`Failed to load lightning texture from ${texturePaths.lightning}:`, err);
                         return PIXI.Texture.WHITE;
                     })
             };
             
-            console.log("Textures loaded successfully:", this.textures);
+            // Log the loaded texture details
+            console.log("Loaded textures:", {
+                rain: {
+                    valid: this.textures.rain.valid,
+                    width: this.textures.rain.width,
+                    height: this.textures.rain.height
+                },
+                snow: {
+                    valid: this.textures.snow.valid,
+                    width: this.textures.snow.width,
+                    height: this.textures.snow.height
+                },
+                cloud: {
+                    valid: this.textures.cloud.valid,
+                    width: this.textures.cloud.width,
+                    height: this.textures.cloud.height
+                },
+                lightning: {
+                    valid: this.textures.lightning.valid,
+                    width: this.textures.lightning.width,
+                    height: this.textures.lightning.height
+                }
+            });
+            
         } catch (error) {
             console.error("Error loading textures:", error);
             this.textures = {
                 rain: PIXI.Texture.WHITE,
                 snow: PIXI.Texture.WHITE,
-                cloud: PIXI.Texture.WHITE
+                cloud: PIXI.Texture.WHITE,
+                lightning: PIXI.Texture.WHITE
             };
         }
     }
@@ -60,8 +101,8 @@ class PixiWeatherEffects {
         this.active = true;
         for (let i = 0; i < 100; i++) {
             const rain = new PIXI.Sprite(this.textures.rain);
-            rain.alpha = 0.3;
-            rain.scale.set(0.3, 1);
+            rain.alpha = 0.5;
+            rain.scale.set(0.2);
             this.resetRainDrop(rain);
             this.app.stage.addChild(rain);
             this.particles.push({
@@ -78,8 +119,8 @@ class PixiWeatherEffects {
         this.active = true;
         for (let i = 0; i < 50; i++) {
             const snow = new PIXI.Sprite(this.textures.snow);
-            snow.alpha = 0.7;
-            snow.scale.set(0.2);
+            snow.alpha = 0.8;
+            snow.scale.set(0.15);
             this.resetSnowflake(snow);
             this.app.stage.addChild(snow);
             this.particles.push({
@@ -97,8 +138,8 @@ class PixiWeatherEffects {
         this.active = true;
         for (let i = 0; i < 5; i++) {
             const cloud = new PIXI.Sprite(this.textures.cloud);
-            cloud.alpha = 0.3;
-            cloud.scale.set(2);
+            cloud.alpha = 0.6;
+            cloud.scale.set(1.5);
             this.resetCloud(cloud);
             this.app.stage.addChild(cloud);
             this.particles.push({
