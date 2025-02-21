@@ -1,13 +1,12 @@
-/* Reset any potential background colors */
+/* Base Styles */
 html, body {
     margin: 0;
     padding: 0;
     min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Base theme styles */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     transition: all 0.3s ease;
     background: #088dec;
     color: white;
@@ -15,25 +14,25 @@ body {
     position: relative;
 }
 
-/* Dark theme styles */
+/* Theme Styles */
 body.dark-theme {
     background: #1a1a1a !important;
-    color: white;
 }
 
-/* Light theme styles */
 body.light-theme {
     background: linear-gradient(135deg, #3a6fc6 0%, #5b9be6 100%) !important;
-    color: white;
 }
 
-/* Make sure no other elements are creating a background overlay */
-.container, 
-.weather-card,
-#celestialContainer {
-    background: transparent;
+/* Layout Components */
+.container {
+    position: relative;
+    z-index: 2;
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
 }
 
+/* Weather Canvas */
 #weatherCanvas {
     position: fixed;
     top: 0;
@@ -44,14 +43,7 @@ body.light-theme {
     z-index: 1;
 }
 
-.container {
-    position: relative;
-    z-index: 2;
-    padding: 2rem;
-    max-width: 800px;
-    margin: 0 auto;
-}
-
+/* Search Box */
 .search-box {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
@@ -97,6 +89,7 @@ button:hover {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
+/* Weather Card */
 .weather-card {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
@@ -116,10 +109,7 @@ button:hover {
     opacity: 1;
 }
 
-.weather-info-column {
-    /* For the left column with weather info */
-}
-
+/* City Image */
 .city-image-column {
     height: 400px;
     border-radius: 15px;
@@ -138,11 +128,7 @@ button:hover {
     transform: scale(1.05);
 }
 
-#weatherResult {
-    margin-top: 20px;
-    font-size: 18px;
-}
-
+/* Celestial Body */
 .celestial-container {
     position: fixed;
     top: 20px;
@@ -166,34 +152,7 @@ button:hover {
     transition: all 0.3s ease;
 }
 
-.suggestion-popup {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(255, 255, 255, 0.95);
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-    z-index: 1000;
-    color: #333;
-}
-
-.suggestion-popup button {
-    margin-top: 10px;
-    padding: 8px 16px;
-    background: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-.suggestion-popup button:hover {
-    background: #45a049;
-}
-
-/* Theme Switch Styles */
+/* Theme Switch */
 .theme-switch-wrapper {
     position: fixed;
     top: 20px;
@@ -263,13 +222,7 @@ input:checked + .slider:before {
     transform: translateX(26px);
 }
 
-/* Light theme styles */
-body.light-theme .search-box,
-body.light-theme .weather-card {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-/* Weather symbol hover animation */
+/* Interactive Elements */
 .weather-icon {
     transition: transform 0.3s ease, filter 0.3s ease;
     cursor: pointer;
@@ -280,7 +233,6 @@ body.light-theme .weather-card {
     filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
 }
 
-/* Temperature display styling */
 .temperature-display {
     cursor: pointer;
     transition: transform 0.3s ease, text-shadow 0.3s ease;
@@ -292,7 +244,6 @@ body.light-theme .weather-card {
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
 }
 
-/* Weather details hover animation */
 .detail {
     transition: transform 0.3s ease, background-color 0.3s ease;
     padding: 8px;
@@ -302,4 +253,32 @@ body.light-theme .weather-card {
 .detail:hover {
     transform: translateX(10px);
     background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Popup Styles */
+.suggestion-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.95);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    color: #333;
+}
+
+.suggestion-popup button {
+    margin-top: 10px;
+    padding: 8px 16px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.suggestion-popup button:hover {
+    background: #45a049;
 }

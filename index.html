@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -5,11 +7,25 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Theme Toggle -->
+    <div class="theme-switch-wrapper">
+        <label class="theme-switch">
+            <input type="checkbox" id="themeToggle">
+            <div class="slider round">
+                <i class="fas fa-sun"></i>
+                <i class="fas fa-moon"></i>
+            </div>
+        </label>
+    </div>
+
+    <!-- Background Elements -->
     <div id="cityBackground" class="city-background"></div>
     <div id="celestialContainer" class="celestial-container">
         <div id="celestialBody" class="celestial-body"></div>
     </div>
     <canvas id="weatherCanvas"></canvas>
+
+    <!-- Main Content -->
     <div class="container">
         <div class="search-box">
             <h1>Better Weather.com</h1>
@@ -22,15 +38,8 @@
         </div>
         <div id="weatherResult" class="weather-card"></div>
     </div>
-    <div class="theme-switch-wrapper">
-        <label class="theme-switch">
-            <input type="checkbox" id="themeToggle">
-            <div class="slider round">
-                <i class="fas fa-sun"></i>
-                <i class="fas fa-moon"></i>
-            </div>
-        </label>
-    </div>
+
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/Draggable.min.js"></script>
@@ -39,3 +48,4 @@
     <script src="weather-effects-pixi.js"></script>
     <script src="script.js"></script>
 </body>
+</html>

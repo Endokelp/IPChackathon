@@ -2,27 +2,14 @@ class CelestialSystem {
     constructor() {
         this.element = document.getElementById('celestialBody');
         this.container = document.getElementById('celestialContainer');
-        this.setupDraggable();
-        this.setupClickAnimation();
         this.baseScale = 1;
+        this.setupClickAnimation();
     }
 
-    setupDraggable() {
-        Draggable.create(this.element, {
-            type: "rotation",
-            inertia: true,
-            onDrag: function() {
-                gsap.to(this.target, {
-                    boxShadow: "0 0 30px #FFE87C",
-                    duration: 0.2
-                });
-            },
-            onDragEnd: function() {
-                gsap.to(this.target, {
-                    boxShadow: "0 0 20px #FFE87C",
-                    duration: 0.3
-                });
-            }
+    updateGlow(intensity) {
+        gsap.to(this.element, {
+            boxShadow: `0 0 ${intensity}px #FFE87C`,
+            duration: intensity === 30 ? 0.2 : 0.3
         });
     }
 
@@ -32,36 +19,21 @@ class CelestialSystem {
             gsap.to(this.element, {
                 scale: this.baseScale * 1.2,
                 duration: 0.15,
-                onComplete: () => {
-                    gsap.to(this.element, {
-                        scale: this.baseScale,
-                        duration: 0.15
-                    });
-                }
+                yoyo: true,
+                repeat: 1
             });
         });
     }
 
     updateForWeather(condition) {
-        const isDay = new Date().getHours() > 6 && new Date().getHours() < 18;
-        const isDarkTheme = document.body.classList.contains('dark-theme');
+        const opacity = condition.includes('clear') ? 1 :
+                       condition.includes('clouds') ? 0.3 :
+                       0.1;
         
-        if (condition.includes('clouds')) {
-            gsap.to(this.element, {
-                opacity: 0.3,
-                duration: 1
-            });
-        } else if (condition.includes('clear')) {
-            gsap.to(this.element, {
-                opacity: 1,
-                duration: 1
-            });
-        } else if (condition.includes('rain') || condition.includes('snow')) {
-            gsap.to(this.element, {
-                opacity: 0.1,
-                duration: 1
-            });
-        }
+        gsap.to(this.element, {
+            opacity,
+            duration: 1
+        });
     }
 }
 
