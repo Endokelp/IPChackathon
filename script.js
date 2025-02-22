@@ -39,18 +39,24 @@ async function fetchWeatherData() {
     let weatherResult = document.getElementById('weatherResult');
     weatherResult.classList.remove('visible');
 
+    // TODO: move to env file
     const apiKey = 'b61ba318b9af8364bfe43d521bfa5c8f';
     let url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=imperial&appid=${apiKey}`;
 
     try {
         let response = await fetch(url);
-        let data = await response.json();
-
-        if (data.cod !== '200') {
-            weatherResult.innerHTML = `<p class="error">${data.message}</p>`;
+        
+        // Check if response is ok before trying to parse JSON
+        if (!response.ok) {
+            // console.log('City not found, status:', response.status);
+            weatherResult.innerHTML = `<p class="error">City not found! Try another one?</p>`;
+            setTimeout(() => weatherResult.classList.add('visible'), 100);
             return;
         }
 
+        let data = await response.json();
+
+        // update everything
         await updateCityImage(city);
         applyWeatherEffects(data.list[0].weather[0].main.toLowerCase());
         renderWeatherDetails(data.list[0], data);
@@ -59,6 +65,7 @@ async function fetchWeatherData() {
     } catch (error) {
         console.error('weather fetch failed:', error);
         weatherResult.innerHTML = '<p class="error">Error fetching weather data. Please try again.</p>';
+        setTimeout(() => weatherResult.classList.add('visible'), 100);
     }
 }
 
@@ -147,14 +154,58 @@ function toggleTemperatureUnit(element) {
  * Displays clothing suggestions based on the current weather condition.
  */
 function showClothingTips(condition) {
+    // grab current temp from the display
+    let tempElement = document.querySelector('.temperature-display');
+    let tempF = parseInt(tempElement.dataset.tempF);
+    
+    //temperature ranges in F
+    let tempRange = 
+        tempF >= 85 ? 'hot' :
+        tempF >= 65 ? 'warm' :
+        tempF >= 45 ? 'mild' :
+        tempF >= 32 ? 'cold' :
+        'freezing';
+
+    //suggestions based on both weather and temp
     const suggestions = {
-        rain: "Don't forget your raincoat or umbrella, waterproof shoes recommended so you don't slip and lose your aura.",
-        snow: "wear a warm coat, gloves, scarf, and winter boots. or walk around naked to improve your aura.",
-        clear: "Perfect weather! Dress comfortably and rizz up the huzz.",
-        clouds: "Bring a light jacket to mog ppl around you"
+        rain: {
+            hot: "Light raincoat and shorts, it's warm but wet!", //my fav kind of weather (pause.)
+            warm: "Waterproof jacket and comfortable clothes",
+            mild: "Warm raincoat, waterproof boots, and warm layers",
+            cold: "Heavy raincoat, insulated waterproof boots, and multiple warm layers",
+            freezing: "Just dont go out bruh, put the fries in the bag (in home)"
+        },
+        snow: {
+            hot: "That isn't possible. Check your thermometer!", // global warming is weird
+            warm: "This weather makes no sense - but dress warmly just in case", 
+            mild: "Heavy winter coat, gloves, and waterproof boots",
+            cold: "Full winter gear - look cold and be cold 🥶🥶",
+            freezing: "Just dont go out bruh, put the fries in the bag (in home)"
+        },
+        clear: {
+            hot: "breathable clothes. Don't forget sunscreen!",
+            warm: "Light clothes - perfect for a t-shirt and shorts",
+            mild: "Light jacket or sweater with long pants",
+            cold: "Winter coat, gloves, and warm layers",
+            freezing: "Just dont go out bruh, put the fries in the bag (in home)"
+        },
+        clouds: {
+            hot: "Light, comfortable clothes - it's still hot!",
+            warm: "Normal clothes, maybe a light jacket",
+            mild: "Warm jacket and layers recommended",
+            cold: "Winter coat and multiple warm layers",
+            freezing: "Just dont go out bruh, put the fries in the bag (in home)"
+        }
     };
 
-    let suggestionText = suggestions[condition] || "Wear something comfortable based on how you feel.";
+    // handle 'overcast' as 'clouds'
+    if (condition.includes('cloud') || condition === 'overcast') {
+        condition = 'clouds';
+    }
+
+    // fallback for unknown conditions
+    let suggestionText = suggestions[condition]?.[tempRange] || 
+        `For ${tempF}°F, you need ${tempRange === 'freezing' ? 'serious winter gear' : 'appropriate'} clothing for ${tempRange} weather`;
 
     let suggestionDiv = document.createElement('div');
     suggestionDiv.className = 'suggestion-popup';
@@ -168,7 +219,7 @@ function showClothingTips(condition) {
 }
 
 /**
- * Fetches and updates the city background image.
+ * Fetches and updates the city background image. I don't know what's harder, setting up unsplash or writing the code itself.
  */
 async function updateCityImage(cityName) {
     try {
@@ -187,6 +238,6 @@ async function updateCityImage(cityName) {
             }, 100);
         }
     } catch (error) {
-        console.warn("Could not load city image.");
+        console.warn("Couldn't load city image.");
     }
 }
