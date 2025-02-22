@@ -1,19 +1,20 @@
+// handles rain/snow effects
 class PixiWeatherEffects {
     constructor() {
-        this.app = this._initPixiApp();
+        this.app = this._makePixi();
+        this.drops = [];  // store particles
+        this.active = false;
         this.textures = {};
         this.particles = [];
-        this.isActive = false;
-        this.loadTextures();
         
         // for debugging
         window.debugWeather = this;
     }
 
-    _initPixiApp() {
+    _makePixi() {
         let app = new PIXI.Application({
-            width: window.innerWidth,
-            height: window.innerHeight,
+            width: innerWidth,
+            height: innerHeight,
             transparent: true,
             backgroundAlpha: 0,
             resizeTo: window
@@ -21,12 +22,14 @@ class PixiWeatherEffects {
 
         app.view.id = 'weatherCanvas';
         
-        // could make this cleaner but works for now
-        app.view.style.position = 'fixed';
-        app.view.style.top = '0';
-        app.view.style.left = '0';
-        app.view.style.pointerEvents = 'none';
-        app.view.style.zIndex = '1';
+        // quick style
+        Object.assign(app.view.style, {
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            pointerEvents: 'none',
+            zIndex: '1'
+        });
 
         document.body.appendChild(app.view);
         return app;
@@ -50,7 +53,7 @@ class PixiWeatherEffects {
 
         try {
             let texturePromises = [];
-            // mixing different loop styles because why not
+           //maybe do this better
             Object.entries(files).forEach(([key, file]) => {
                 texturePromises.push(
                     PIXI.Assets.load(`${path}/${file}`)
@@ -106,7 +109,7 @@ class PixiWeatherEffects {
     startEffect(count, type, props) {
         // cleanup first
         this.clearEffects();
-        this.isActive = true;
+        this.active = true;
 
         // create all the particles
         for (let i = 0; i < count; i++) {
@@ -116,7 +119,7 @@ class PixiWeatherEffects {
             particle.alpha = props.alpha;
             particle.scale.set(props.scale);
             
-            // reset position (could be a function but meh)
+            // reset position (could be a function)
             if (type === 'rain' || type === 'snow') {
                 particle.x = Math.random() * this.app.screen.width;
                 particle.y = -20;
@@ -147,7 +150,7 @@ class PixiWeatherEffects {
 
     // probably could optimize this
     animate() {
-        if (!this.isActive) return;
+        if (!this.active) return;
 
         for (let p of this.particles) {
             p.sprite.y += p.speed;
@@ -177,8 +180,8 @@ class PixiWeatherEffects {
     }
 
     clearEffects() {
-        this.isActive = false;
-        // could use forEach here but loop is fine
+        this.active = false;
+        
         for (let i = 0; i < this.particles.length; i++) {
             this.app.stage.removeChild(this.particles[i].sprite);
         }
@@ -186,5 +189,5 @@ class PixiWeatherEffects {
     }
 }
 
-// expose for debugging
-let weatherEffects = new PixiWeatherEffects();
+// make it global
+window.weatherEffects = new PixiWeatherEffects();

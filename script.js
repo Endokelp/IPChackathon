@@ -7,65 +7,66 @@ document.addEventListener('DOMContentLoaded', () => {
  * Initializes the theme toggle switch and restores the last selected theme.
  */
 function initializeTheme() {
-    let themeToggle = document.getElementById('themeToggle');
-    let savedTheme = localStorage.getItem('theme') || 'light-theme';
+    let toggle = document.getElementById('themeToggle');
+    let theme = localStorage.getItem('theme') || 'light-theme';  // default to light
 
-    document.body.className = savedTheme;
-    themeToggle.checked = savedTheme === 'dark-theme';
+    document.body.className = theme;
+    toggle.checked = theme === 'dark-theme';
 
-    themeToggle.addEventListener('change', () => {
-        let selectedTheme = themeToggle.checked ? 'dark-theme' : 'light-theme';
-        document.body.className = selectedTheme;
-        localStorage.setItem('theme', selectedTheme);
+    toggle.addEventListener('change', () => {
+        // theme switcer
+        document.body.className = toggle.checked ? 'dark-theme' : 'light-theme';
+        localStorage.setItem('theme', document.body.className);
     });
 }
 
 /**
- * Sets up the city input field to fetch weather data when the user presses Enter.
+ * sets up the city input field to fetch weather data when user presses Enter.
  */
 function initializeCitySearch() {
-    document.getElementById('cityInput').addEventListener('keypress', (event) => {
-        if (event.key === 'Enter') fetchWeatherData();
+    document.getElementById('cityInput').addEventListener('keypress', e => {
+        if(e.key === 'Enter') fetchWeatherData();
     });
 }
 
 /**
- * Fetches weather data for the entered city.
+ * fetches weather data for the entered city.
  */
 async function fetchWeatherData() {
     let city = document.getElementById('cityInput').value.trim();
-    if (!city) return;
+    if(!city) return;
 
-    let weatherResult = document.getElementById('weatherResult');
-    weatherResult.classList.remove('visible');
+    let result = document.getElementById('weatherResult');
+    result.classList.remove('visible');
 
-    // TODO: move to env file
-    const apiKey = 'b61ba318b9af8364bfe43d521bfa5c8f';
-    let url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=imperial&appid=${apiKey}`;
+    const key = 'b61ba318b9af8364bfe43d521bfa5c8f'; 
+    //const key = process.env.WEATHER_API_KEY;  // TODO: set this up properly
 
     try {
-        let response = await fetch(url);
+        console.log('fetching weather for:', city);  //leaving this for debugging
+        let res = await fetch(
+            `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=imperial&appid=${key}`
+        );
         
-        // Check if response is ok before trying to parse JSON
-        if (!response.ok) {
-            // console.log('City not found, status:', response.status);
-            weatherResult.innerHTML = `<p class="error">City not found! Try another one?</p>`;
-            setTimeout(() => weatherResult.classList.add('visible'), 100);
+        if(!res.ok) {
+            result.innerHTML = `<p class="error">City not found! check your spelling maybe?</p>`;
+            setTimeout(() => result.classList.add('visible'), 100);
             return;
         }
 
-        let data = await response.json();
-
-        // update everything
+        let data = await res.json();
+        
+        // do all the things
         await updateCityImage(city);
         applyWeatherEffects(data.list[0].weather[0].main.toLowerCase());
         renderWeatherDetails(data.list[0], data);
 
-        setTimeout(() => weatherResult.classList.add('visible'), 100);
-    } catch (error) {
-        console.error('weather fetch failed:', error);
-        weatherResult.innerHTML = '<p class="error">Error fetching weather data. Please try again.</p>';
-        setTimeout(() => weatherResult.classList.add('visible'), 100);
+        // fade it in
+        setTimeout(() => result.classList.add('visible'), 100);
+    } catch(err) {
+        console.error('weather fetch died:', err);
+        result.innerHTML = '<p class="error">Something broke! Try again?</p>';
+        setTimeout(() => result.classList.add('visible'), 100);
     }
 }
 
@@ -73,19 +74,23 @@ async function fetchWeatherData() {
  * Applies visual effects based on the weather condition.
  */
 function applyWeatherEffects(condition) {
-    if (condition.includes('rain') || condition.includes('drizzle')) {
+    weatherEffects.clearEffects();  // clear old stuff first
+    
+    // probably could use a switch here but whatever
+    if(condition.includes('rain') || condition.includes('drizzle')) {
         weatherEffects.startRain();
         celestialSystem.updateForWeather('clouds');
-    } else if (condition.includes('snow')) {
+    } else if(condition.includes('snow')) {
         weatherEffects.startSnow();
         celestialSystem.updateForWeather('clouds');
-    } else if (condition.includes('clear')) {
+    } else if(condition.includes('clear')) {
         weatherEffects.clearEffects();
         celestialSystem.updateForWeather('clear');
-    } else if (condition.includes('clouds')) {
+    } else if(condition.includes('clouds')) {
         weatherEffects.startCloudy();
         celestialSystem.updateForWeather('clouds');
     } else {
+        //dk what weather this is, just clear everything
         weatherEffects.clearEffects();
         celestialSystem.updateForWeather('clear');
     }
@@ -95,13 +100,16 @@ function applyWeatherEffects(condition) {
  * Updates the weather display UI with fetched data.
  */
 function renderWeatherDetails(current, data) {
-    let tempF = Math.round(current.main.temp);
-    let tempC = Math.round((tempF - 32) * 5 / 9);
-    let visibilityMiles = (current.visibility / 1609).toFixed(1);
-    let pressureInHg = (current.pressure * 0.02953).toFixed(2);
+    let temp_f = Math.round(current.main.temp);
+    let temp_c = Math.round((temp_f - 32) * 5/9);
+    
+    // convert to miles, america
+    let visibility = (current.visibility / 1609).toFixed(1);
+    let pressure = (current.pressure * 0.02953).toFixed(2);
 
-    let weatherResult = document.getElementById('weatherResult');
-    weatherResult.innerHTML = `
+    //template literal incoming
+    let result = document.getElementById('weatherResult');
+    result.innerHTML = `
         <div class="weather-info-column">
             <h2>${data.city.name}, ${data.city.country}</h2>
             <div class="weather-main">
@@ -110,17 +118,17 @@ function renderWeatherDetails(current, data) {
                      class="weather-icon">
                 <h3>${current.weather[0].description}</h3>
                 <div class="temperature-display" onclick="toggleTemperatureUnit(this)" 
-                     data-temp-f="${tempF}" 
-                     data-temp-c="${tempC}" 
+                     data-temp-f="${temp_f}" 
+                     data-temp-c="${temp_c}" 
                      data-showing="F">
-                    ${tempF}°F
+                    ${temp_f}°F
                 </div>
             </div>
             <div class="weather-details">
                 <div class="detail"><i class="fas fa-tint"></i> Humidity: ${current.main.humidity}%</div>
                 <div class="detail"><i class="fas fa-wind"></i> Wind: ${Math.round(current.wind.speed)} mph</div>
-                <div class="detail"><i class="fas fa-eye"></i> Visibility: ${visibilityMiles} mile${visibilityMiles === "1.0" ? "" : "s"}</div>
-                <div class="detail"><i class="fas fa-compress-alt"></i> Pressure: ${pressureInHg} inHg</div>
+                <div class="detail"><i class="fas fa-eye"></i> Visibility: ${visibility} mile${visibility === "1.0" ? "" : "s"}</div>
+                <div class="detail"><i class="fas fa-compress-alt"></i> Pressure: ${pressure} inHg</div>
                 <div class="detail"><i class="fas fa-thermometer-half"></i> Feels like: ${Math.round(current.main.feels_like)}°F</div>
             </div>
             <button onclick="showClothingTips('${current.weather[0].main.toLowerCase()}')" class="suggestion-btn">
@@ -134,110 +142,110 @@ function renderWeatherDetails(current, data) {
 }
 
 /**
- * Toggles between Fahrenheit and Celsius when the user clicks the temperature display.
+ * Toggles between F and C when the user clicks the temperature display.
  */
-function toggleTemperatureUnit(element) {
-    let tempF = element.dataset.tempF;
-    let tempC = element.dataset.tempC;
-    let showing = element.dataset.showing;
+function toggleTemperatureUnit(el) {
+    let f = el.dataset.tempF;
+    let c = el.dataset.tempC;
+    let current = el.dataset.showing;
 
-    let newUnit = showing === 'F' ? 'C' : 'F';
-    let newTemp = showing === 'F' ? tempC : tempF;
+    // flip between F and C
+    if(current === 'F') {
+        el.textContent = `${c}°C`;
+        el.dataset.showing = 'C';
+    } else {
+        el.textContent = `${f}°F`;
+        el.dataset.showing = 'F';
+    }
 
-    element.textContent = `${newTemp}°${newUnit}`;
-    element.dataset.showing = newUnit;
-
-    gsap.to(element, { scale: 1.2, duration: 0.15, yoyo: true, repeat: 1 });
+    // fun little animation
+    gsap.to(el, { scale: 1.2, duration: 0.15, yoyo: true, repeat: 1 });
 }
 
 /**
  * Displays clothing suggestions based on the current weather condition.
  */
 function showClothingTips(condition) {
-    // grab current temp from the display
-    let tempElement = document.querySelector('.temperature-display');
-    let tempF = parseInt(tempElement.dataset.tempF);
+    let temp = parseInt(document.querySelector('.temperature-display').dataset.tempF);
     
-    //temperature ranges in F
-    let tempRange = 
-        tempF >= 85 ? 'hot' :
-        tempF >= 65 ? 'warm' :
-        tempF >= 45 ? 'mild' :
-        tempF >= 32 ? 'cold' :
+    // figure out how hot/cold it is
+    let range = 
+        temp >= 85 ? 'hot' :
+        temp >= 65 ? 'warm' :
+        temp >= 45 ? 'mild' :
+        temp >= 32 ? 'cold' :
         'freezing';
 
-    //suggestions based on both weather and temp
-    const suggestions = {
+    const tips = {
         rain: {
-            hot: "Light raincoat and shorts, it's warm but wet!", //my fav kind of weather (pause.)
+            hot: "Light raincoat and shorts",
             warm: "Waterproof jacket and comfortable clothes",
-            mild: "Warm raincoat, waterproof boots, and warm layers",
-            cold: "Heavy raincoat, insulated waterproof boots, and multiple warm layers",
-            freezing: "Just dont go out bruh, put the fries in the bag (in home)"
+            mild: "Warm raincoat, waterproof boots",
+            cold: "Heavy raincoat, insulated waterproof boots",
+            freezing: "just stay inside, it's too cold for this"
         },
         snow: {
-            hot: "That isn't possible. Check your thermometer!", // global warming is weird
-            warm: "This weather makes no sense - but dress warmly just in case", 
+            hot: "This... shouldn't be possible?",
+            warm: "This weather makes no sense",
             mild: "Heavy winter coat, gloves, and waterproof boots",
-            cold: "Full winter gear - look cold and be cold 🥶🥶",
-            freezing: "Just dont go out bruh, put the fries in the bag (in home)"
+            cold: "Full winter gear ",
+            freezing: "Extreme cold weather gear needed! or just stay inside"
         },
         clear: {
-            hot: "breathable clothes. Don't forget sunscreen!",
-            warm: "Light clothes - perfect for a t-shirt and shorts",
+            hot: "Light, breathable clothes.",
+            warm: "perfect for a t-shirt and shorts",
             mild: "Light jacket or sweater with long pants",
             cold: "Winter coat, gloves, and warm layers",
-            freezing: "Just dont go out bruh, put the fries in the bag (in home)"
+            freezing: "Heavy winter protection! or just stay inside"
         },
         clouds: {
-            hot: "Light, comfortable clothes - it's still hot!",
+            hot: "Light, comfortable clothes",
             warm: "Normal clothes, maybe a light jacket",
-            mild: "Warm jacket and layers recommended",
-            cold: "Winter coat and multiple warm layers",
-            freezing: "Just dont go out bruh, put the fries in the bag (in home)"
+            mild: "Warm jacket",
+            cold: "Winter coat",
+            freezing: "Full winter gear or stay inside"
         }
     };
 
-    // handle 'overcast' as 'clouds'
-    if (condition.includes('cloud') || condition === 'overcast') {
-        condition = 'clouds';
-    }
+    // handle cloudy variations
+    if(condition.includes('cloud') || condition === 'overcast') condition = 'clouds';
 
-    // fallback for unknown conditions
-    let suggestionText = suggestions[condition]?.[tempRange] || 
-        `For ${tempF}°F, you need ${tempRange === 'freezing' ? 'serious winter gear' : 'appropriate'} clothing for ${tempRange} weather`;
+    let tip = tips[condition]?.[range] || 
+        `For ${temp}°F, you need ${range === 'freezing' ? 'serious winter gear' : 'appropriate'} clothing for ${range} weather`;
 
-    let suggestionDiv = document.createElement('div');
-    suggestionDiv.className = 'suggestion-popup';
-    suggestionDiv.innerHTML = `
+    // show the popup
+    let div = document.createElement('div');
+    div.className = 'suggestion-popup';
+    div.innerHTML = `
         <h3>Clothing Suggestions</h3>
-        <p>${suggestionText}</p>
+        <p>${tip}</p>
         <button onclick="this.parentElement.remove()">Close</button>
     `;
     
-    document.body.appendChild(suggestionDiv);
+    document.body.appendChild(div);
 }
 
 /**
- * Fetches and updates the city background image. I don't know what's harder, setting up unsplash or writing the code itself.
+ * Fetches and updates the city background image.
  */
 async function updateCityImage(cityName) {
     try {
-        let response = await fetch(
+        // unsplash api stuff
+        let res = await fetch(
             `https://api.unsplash.com/search/photos?query=${cityName} city&client_id=ni4PP6vH3b_G5gYssLTqZpzKyS7UFt5BQXMJ9pmrpZk`
         );
-        let data = await response.json();
+        let data = await res.json();
 
-        if (data.results?.length > 0) {
+        if(data.results?.length > 0) {
             setTimeout(() => {
-                let cityImage = document.getElementById('cityImage');
-                if (cityImage) {
-                    cityImage.style.display = 'block';
-                    cityImage.src = data.results[0].urls.regular;
+                let img = document.getElementById('cityImage');
+                if(img) {  // make sure element exists
+                    img.style.display = 'block';
+                    img.src = data.results[0].urls.regular;
                 }
-            }, 100);
+            }, 100);  // small delay looks better
         }
-    } catch (error) {
-        console.warn("Couldn't load city image.");
+    } catch(err) {
+        console.warn("image fetch failed, oh well");
     }
 }

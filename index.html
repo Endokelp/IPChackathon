@@ -1,19 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Better Weather.com</title>
-    <!-- maybe add favicon later -->
+    <title>Weather App</title>
     <link rel="stylesheet" href="style.css">
-    <!-- <link rel="stylesheet" href="dark-theme.css"> leaving this for later -->
 </head>
 <body>
-    <!-- light/dark mode switch -->
+    <!-- theme toggle -->
     <div class="theme-switch-wrapper">
         <label class="theme-switch">
             <input type="checkbox" id="themeToggle">
-            <!-- icons for sun/moon -->
             <div class="slider round">
                 <i class="fas fa-sun"></i>
                 <i class="fas fa-moon"></i>
@@ -21,50 +18,32 @@
         </label>
     </div>
 
-    <!-- background stuff -->
-    <div id="cityBackground" class="city-background"></div>
-    
-    <!-- sun/moon in corner -->
+    <div id="cityBackground"></div>
     <div id="celestialContainer" class="celestial-container">
         <div id="celestialBody" class="celestial-body"></div>
     </div>
     
-    <!-- weather effects go here -->
     <canvas id="weatherCanvas"></canvas>
 
-    <!-- main content -->
     <div class="container">
-        <!-- search box at top -->
         <div class="search-box">
-            <h1>Better Weather.com</h1>
-            <!-- todo: add autocomplete? -->
+            <h1>Weather App</h1>
             <div class="input-group">
-                <input 
-                    type="text" 
-                    id="cityInput" 
-                    placeholder="Enter city name"
-                    autofocus
-                >
-                <button onclick="getWeather()">
-                    <i class="fas fa-search"></i>
-                </button>
+                <input type="text" id="cityInput" placeholder="City name" autofocus>
+                <button onclick="getWeather()">🔍</button>
             </div>
         </div>
 
-        <!-- weather shows up here -->
-        <div id="weatherResult" class="weather-card">
-            <!-- content added by JS -->
-        </div>
+        <div id="weatherResult" class="weather-card"></div>
     </div>
 
-    <!-- libraries -->
+    <!-- libs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <!-- might not need draggable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/Draggable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
     
-    <!-- our scripts -->
+    <!-- our stuff -->
     <script src="celestial.js"></script>
     <script src="weather-effects-pixi.js"></script>
     <script src="script.js"></script>

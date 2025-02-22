@@ -1,46 +1,42 @@
+// sun/moon thing
 class CelestialSystem {
     constructor() {
-        this.element = document.getElementById('celestialBody');
-        this.container = document.getElementById('celestialContainer');
-        this.baseScale = 1;
-        this._setupClickStuff();
-        window.celestial = this;
+        this.sun = document.getElementById('celestialBody')
+        this.box = document.getElementById('celestialContainer')
+        this.scale = 1
+        this._makeClickable()
+        window.celestial = this  // global access 
     }
 
-    updateGlow(intensity) {
-        gsap.to(this.element, {
-            boxShadow: `0 0 ${intensity}px #FFE87C`,
-            duration: intensity === 30 ? 0.2 : 0.3
-        });
+    // make it glow more/less
+    updateGlow(i) {
+        gsap.to(this.sun, {
+            boxShadow: `0 0 ${i}px #FFE87C`,
+            duration: i === 30 ? .2 : .3
+        })
     }
 
-    _setupClickStuff() {
-        this.element.addEventListener('click', () => {
-            this.baseScale = Math.min(this.baseScale + 0.1, 2);
-            gsap.to(this.element, {
-                scale: this.baseScale * 1.2,
-                duration: 0.15,
+    // click to make bigger, if it works it works
+    _makeClickable() {
+        this.sun.onclick = () => {
+            this.scale = Math.min(this.scale + .1, 2)
+            gsap.to(this.sun, {
+                scale: this.scale * 1.2,
+                duration: .15,
                 yoyo: true,
                 repeat: 1
-            });
-        });
+            })
+        }
     }
 
-    updateForWeather(condition) {
-        let opacity;
-        
-        if (condition.includes('clear')) {
-            opacity = 1;
-        } else if (condition.includes('clouds')) {
-            opacity = 0.3;
-        } else {
-            opacity = 0.1;
-        }
-        
-        gsap.to(this.element, {
-            opacity: opacity,
+    // weather affects visibility
+    updateForWeather(w) {
+        gsap.to(this.sun, {
+            opacity: w.includes('clear') ? 1 : 
+                    w.includes('clouds') ? .3 : 
+                    .1,
             duration: 1
-        });
+        })
     }
 }
 
