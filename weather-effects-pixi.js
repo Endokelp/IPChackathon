@@ -1,17 +1,19 @@
-// handles rain/snow effects
+// handles all the fancy rain/snow stuff
+// probably should split this into separate files but whatever
 class PixiWeatherEffects {
     constructor() {
-        this.app = this._makePixi();
-        this.drops = [];  // store particles
+        this.app = this._setupPixiApp();
+        this.drops = [];  // old name but keeping it
         this.active = false;
         this.textures = {};
         this.particles = [];
         
-        // for debugging
+        // for when stuff breaks
         window.debugWeather = this;
     }
 
-    _makePixi() {
+    // sets up the pixi canvas thing
+    _setupPixiApp() {
         let app = new PIXI.Application({
             width: innerWidth,
             height: innerHeight,
@@ -22,50 +24,54 @@ class PixiWeatherEffects {
 
         app.view.id = 'weatherCanvas';
         
-        // quick style
-        Object.assign(app.view.style, {
-            position: 'fixed',
-            top: '0',
-            left: '0',
-            pointerEvents: 'none',
-            zIndex: '1'
-        });
+        // make it look right - might need to adjust these later
+        app.view.style.position = 'fixed';
+        app.view.style.top = '0';
+        app.view.style.left = '0';
+        app.view.style.pointerEvents = 'none';
+        app.view.style.zIndex = '1';
 
         document.body.appendChild(app.view);
         return app;
     }
 
+    // loads all the particle images
+    // TODO: maybe add more effects later?
     async loadTextures() {
+        // kenney's particle pack - awesome free assets!
         const path = './texture%20packs/kenney_particle-pack/PNG%20(Transparent)';
         
-        // leaving this here in case we need more textures
+        // might need these later for thunder/fog
         /*const extraTextures = {
             thunder: 'spark_06.png',
             mist: 'smoke_04.png'
         };*/
         
+        // which image to use for what
         const files = {
             rain: 'trace_01.png',
-            snow: 'star_09.png', // star works better than circle
+            snow: 'star_09.png', // stars look better than circles lol
             cloud: 'smoke_08.png',
-            lightning: 'spark_05.png'
+            lightning: 'spark_05.png'  // not using this yet
         };
 
         try {
+            // load everything at once
             let texturePromises = [];
-           //maybe do this better
-            Object.entries(files).forEach(([key, file]) => {
+            
+            // this is messy but it works
+            for(let [key, file] of Object.entries(files)) {
                 texturePromises.push(
-                    PIXI.Assets.load(`${path}/${file}`)
+                    PIXI.Assets.load(path + '/' + file)
                         .then(tex => [key, tex])
                 );
-            });
+            }
             
-            const loadedTextures = await Promise.all(texturePromises);
-            this.textures = Object.fromEntries(loadedTextures);
-            console.log('textures loaded:', Object.keys(this.textures));
+            let loaded = await Promise.all(texturePromises);
+            this.textures = Object.fromEntries(loaded);
+            console.log('got all the textures:', Object.keys(this.textures));
         } catch (err) {
-            console.warn("texture loading failed lol, using white boxes");
+            console.warn("ugh texture loading failed, using white boxes instead :/");
             // fallback to basic shapes
             this.textures = {
                 rain: PIXI.Texture.WHITE,
@@ -76,98 +82,117 @@ class PixiWeatherEffects {
         }
     }
 
+    // make it rain!
     startRain() {
-        // console.log('making it rain');
-        const rainConfig = {
-            alpha: 0.5,
-            scale: 0.2,
-            speed: () => 15 + Math.random() * 10
+        console.log('☔ starting rain');
+        let rainSettings = {
+            alpha: 0.5,  // how visible
+            scale: 0.2,  // how big
+            speed: () => 15 + (Math.random() * 10)  // how fast
         };
         
-        this.startEffect(100, 'rain', rainConfig);
+        this.startEffect(100, 'rain', rainSettings);  // 100 drops seems good
     }
 
+    // let it snow ❄️
     startSnow() {
-        let particles = 50;  // magic number but works well
+        let snowCount = 50;  // looks nice with 50
         
-        this.startEffect(particles, 'snow', {
+        this.startEffect(snowCount, 'snow', {
             alpha: 0.8,
             scale: 0.15,
             speed: () => 2 + Math.random() * 2,
-            drift: () => Math.random() - 0.5
+            drift: () => Math.random() - 0.5  // makes it float side to side
         });
     }
 
+    // cloudy with a chance of meatballs
     startCloudy() {
         this.startEffect(5, 'cloud', {
             alpha: 0.6,
             scale: 1.5,
-            speed: () => 0.5 + Math.random() * 0.5
+            speed: () => 0.5 + Math.random() * 10
         });
     }
 
-    startEffect(count, type, props) {
-        // cleanup first
+    // does the actual work of creating particles
+    startEffect(howMany, whatType, settings) {
+        if (!this.textures[whatType]) {
+            console.error('oops, missing texture for ' + whatType);
+            return;
+        }
+        
+        // clean up old stuff first
         this.clearEffects();
         this.active = true;
 
-        // create all the particles
-        for (let i = 0; i < count; i++) {
-            let particle = new PIXI.Sprite(this.textures[type]);
+        // make all the particles
+        for (let i = 0; i < howMany; i++) {
+            let particle = new PIXI.Sprite(this.textures[whatType]);
             
             // basic setup
-            particle.alpha = props.alpha;
-            particle.scale.set(props.scale);
+            particle.alpha = settings.alpha;
+            particle.scale.set(settings.scale);
             
-            // reset position (could be a function)
-            if (type === 'rain' || type === 'snow') {
+            // put it somewhere
+            if (whatType === 'rain' || whatType === 'snow') {
+                // start above screen
                 particle.x = Math.random() * this.app.screen.width;
                 particle.y = -20;
-            } else if (type === 'cloud') {
+            } else if (whatType === 'cloud') {
+                // start at left side
                 particle.x = -particle.width;
                 particle.y = Math.random() * (this.app.screen.height / 3);
             }
 
             this.app.stage.addChild(particle);
             
-            // store particle data
-            let particleData = {
+            // keep track of this particle
+            let particleInfo = {
                 sprite: particle,
-                speed: props.speed(),
-                type: type
+                speed: settings.speed(),
+                type: whatType
             };
             
-            // add drift for snow
-            if (props.drift) {
-                particleData.drift = props.drift();
+            // snow needs extra drift
+            if (settings.drift) {
+                particleInfo.drift = settings.drift();
             }
             
-            this.particles.push(particleData);
+            this.particles.push(particleInfo);
         }
 
+        // start the animation loop
         requestAnimationFrame(() => this.animate());
     }
 
-    // probably could optimize this
+    // moves everything around
+    // this could probably be optimized but eh
     animate() {
         if (!this.active) return;
 
         for (let p of this.particles) {
+            // everything falls down
             p.sprite.y += p.speed;
 
             if (p.type === 'rain') {
+                // reset rain when it hits bottom
                 if (p.sprite.y > this.app.screen.height) {
                     p.sprite.x = Math.random() * this.app.screen.width;
                     p.sprite.y = -20;
                 }
-            } else if (p.type === 'snow') {
+            } 
+            else if (p.type === 'snow') {
+                // snow drifts and spins
                 p.sprite.x += p.drift;
                 p.sprite.rotation += 0.01;
                 if (p.sprite.y > this.app.screen.height) {
                     p.sprite.x = Math.random() * this.app.screen.width;
                     p.sprite.y = -20;
                 }
-            } else if (p.type === 'cloud') {
+            } 
+            else if (p.type === 'cloud') {
+                // clouds move right
                 p.sprite.x += p.speed;
                 if (p.sprite.x > this.app.screen.width) {
                     p.sprite.x = -p.sprite.width;
@@ -179,15 +204,18 @@ class PixiWeatherEffects {
         requestAnimationFrame(() => this.animate());
     }
 
+    // clean everything up
     clearEffects() {
         this.active = false;
         
-        for (let i = 0; i < this.particles.length; i++) {
-            this.app.stage.removeChild(this.particles[i].sprite);
+        // remove all particles
+        for (let p of this.particles) {
+            this.app.stage.removeChild(p.sprite);
         }
         this.particles = [];
     }
 }
 
-// make it global
-window.weatherEffects = new PixiWeatherEffects();
+// make it available everywhere
+let weatherEffects = new PixiWeatherEffects();
+window.weatherEffects = weatherEffects;  // for debugging
