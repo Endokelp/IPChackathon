@@ -38,41 +38,33 @@ class PixiWeatherEffects {
     // loads all the particle images
     // TODO: maybe add more effects later?
     async loadTextures() {
-        // kenney's particle pack - awesome free assets!
-        const path = './texture%20packs/kenney_particle-pack/PNG%20(Transparent)';
-        
-        // might need these later for thunder/fog
-        /*const extraTextures = {
-            thunder: 'spark_06.png',
-            mist: 'smoke_04.png'
-        };*/
+        // Simple, web-friendly path
+        const path = './assets/textures';
         
         // which image to use for what
         const files = {
             rain: 'trace_01.png',
-            snow: 'star_09.png', // stars look better than circles lol
+            snow: 'star_09.png',
             cloud: 'smoke_08.png',
-            lightning: 'spark_05.png'  // not using this yet
+            lightning: 'spark_05.png'
         };
 
         try {
-            // load everything at once
             let texturePromises = [];
             
-            // this is messy but it works
             for(let [key, file] of Object.entries(files)) {
+                console.log('Loading texture:', `${path}/${file}`); // Debug log
                 texturePromises.push(
-                    PIXI.Assets.load(path + '/' + file)
+                    PIXI.Assets.load(`${path}/${file}`)
                         .then(tex => [key, tex])
                 );
             }
             
             let loaded = await Promise.all(texturePromises);
             this.textures = Object.fromEntries(loaded);
-            console.log('got all the textures:', Object.keys(this.textures));
+            console.log('Successfully loaded textures:', Object.keys(this.textures));
         } catch (err) {
-            console.warn("ugh texture loading failed, using white boxes instead :/");
-            // fallback to basic shapes
+            console.error("Texture loading failed:", err); // More detailed error
             this.textures = {
                 rain: PIXI.Texture.WHITE,
                 snow: PIXI.Texture.WHITE,
