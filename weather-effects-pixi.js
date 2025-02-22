@@ -38,8 +38,8 @@ class PixiWeatherEffects {
     // loads all the particle images
     // TODO: maybe add more effects later?
     async loadTextures() {
-        // Simple, web-friendly path
-        const path = './assets/textures';
+        // Update path to point directly to files in root
+        const path = '.';  // or just use empty string ''
         
         // which image to use for what
         const files = {
@@ -50,21 +50,25 @@ class PixiWeatherEffects {
         };
 
         try {
+            console.log('Starting texture loading from root');
             let texturePromises = [];
             
             for(let [key, file] of Object.entries(files)) {
-                console.log('Loading texture:', `${path}/${file}`); // Debug log
+                console.log('Attempting to load:', file);
                 texturePromises.push(
-                    PIXI.Assets.load(`${path}/${file}`)
-                        .then(tex => [key, tex])
+                    PIXI.Assets.load(file)  // Just use filename directly
+                        .then(tex => {
+                            console.log(`Successfully loaded ${key} texture`);
+                            return [key, tex];
+                        })
                 );
             }
             
             let loaded = await Promise.all(texturePromises);
             this.textures = Object.fromEntries(loaded);
-            console.log('Successfully loaded textures:', Object.keys(this.textures));
+            console.log('All textures loaded successfully:', Object.keys(this.textures));
         } catch (err) {
-            console.error("Texture loading failed:", err); // More detailed error
+            console.error("Texture loading failed:", err);
             this.textures = {
                 rain: PIXI.Texture.WHITE,
                 snow: PIXI.Texture.WHITE,
