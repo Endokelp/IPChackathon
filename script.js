@@ -1,97 +1,114 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    // gotta load the textures first or everything breaks
-    await weatherEffects.loadTextures();
-    
-    // now we can do the rest
-    setupThemeStuff();
-    setupCitySearch();
+    try {
+        // gotta load these first or it breaks
+        await weatherEffects.loadTextures();
+        console.log('textures loaded, doing the rest...');
+        
+        doThemeStuff();
+        makeSearchWork();
+    } catch(err) {
+        console.log('uh oh:', err);
+    }
 });
 
 /**
  * Handles the dark/light mode toggle.
  */
-function setupThemeStuff() {
-    let toggle = document.getElementById('themeToggle');
+function doThemeStuff() {
+    let checkbox = document.getElementById('themeToggle');
+    let savedStuff = localStorage.getItem('theme');
     
-    // get saved theme or default to light
-    let savedTheme = localStorage.getItem('theme');
-    let theme = savedTheme || 'light-theme';
+    // set initial theme
+    document.body.className = savedStuff || 'light-theme';
+    checkbox.checked = savedStuff === 'dark-theme';
 
-    document.body.className = theme;
-    toggle.checked = theme === 'dark-theme';
-
-    // switch themes when clicked
-    toggle.addEventListener('change', () => {
-        let newTheme = toggle.checked ? 'dark-theme' : 'light-theme';
-        document.body.className = newTheme;
-        localStorage.setItem('theme', newTheme);
+    // toggle when clicked
+    checkbox.addEventListener('change', function() {
+        let theme = this.checked ? 'dark-theme' : 'light-theme';
+        document.body.className = theme;
+        localStorage.setItem('theme', theme);
     });
 }
 
 /**
  * Makes the search box work.
  */
-function setupCitySearch() {
-    let input = document.getElementById('cityInput');
-    input.addEventListener('keypress', e => {
+function makeSearchWork() {
+    let searchBox = document.getElementById('cityInput');
+    
+    // search when enter is pressed
+    searchBox.onkeypress = (e) => {
         if(e.key === 'Enter') {
-            getWeatherStuff();  // could've named this better lol
+            fetchWeather();  // get the weather
         }
-    });
+    };
 }
 
 /**
  * Gets weather data from the API.
  */
-async function getWeatherStuff() {
-    let cityInput = document.getElementById('cityInput');
-    let city = cityInput.value.trim();
-    if(!city) return;  // don't bother if empty
+async function fetchWeather() {
+    let box = document.getElementById('cityInput');
+    let city = box.value.trim();
+    
+    // don't do anything if empty
+    if(!city) {
+        console.log('no city entered');
+        return;
+    }
 
-    let result = document.getElementById('weatherResult');
-    result.classList.remove('visible');
+    let resultBox = document.getElementById('weatherResult');
+    resultBox.classList.remove('visible');
 
-    // TODO: move this to env file someday
-    const apiKey = 'b61ba318b9af8364bfe43d521bfa5c8f'; 
+    // api key - should probably hide this somewhere else
+    const API_KEY = 'b61ba318b9af8364bfe43d521bfa5c8f'; 
 
     try {
-        console.log('🔍 looking up weather for:', city);
+        console.log('looking up weather for ' + city + '...');
         
-        // get the weather data
-        let response = await fetch(
+        // get data from api
+        let data = await fetch(
             'https://api.openweathermap.org/data/2.5/forecast?q=' + 
-            city + '&units=imperial&appid=' + apiKey
+            city + '&units=imperial&appid=' + API_KEY
         );
         
-        if(!response.ok) {
-            result.innerHTML = "<p class='error'>Oops! Can't find that city... typo maybe? 🤔</p>";
-            setTimeout(() => result.classList.add('visible'), 100);
+        // check if city exists
+        if(!data.ok) {
+            resultBox.innerHTML = "<p class='error'>Can't find that city! Try another one? 🤔</p>";
+            setTimeout(() => resultBox.classList.add('visible'), 100);
             return;
         }
 
-        let weatherData = await response.json();
+        let weather = await data.json();
         
-        // do all the things we need to do
-        await getAndSetCityPic(city);
-        makeWeatherEffects(weatherData.list[0].weather[0].main.toLowerCase());
-        showWeatherInfo(weatherData.list[0], weatherData);
+        // do all the things
+        try {
+            await getCityImage(city);
+        } catch(e) {
+            console.log('image failed but whatever');
+        }
+        
+        updateWeatherEffects(weather.list[0].weather[0].main.toLowerCase());
+        showCurrentWeather(weather.list[0], weather);
 
-        // fade it in nicely
-        setTimeout(() => result.classList.add('visible'), 100);
+        // show it with a nice fade
+        setTimeout(() => resultBox.classList.add('visible'), 100);
+        
     } catch(err) {
-        console.error('ugh, something broke:', err);
-        result.innerHTML = "<p class='error'>Something went wrong! Maybe try again? 😅</p>";
-        setTimeout(() => result.classList.add('visible'), 100);
+        console.log('something broke:', err);
+        resultBox.innerHTML = "<p class='error'>Oops! Something went wrong 😅</p>";
+        setTimeout(() => resultBox.classList.add('visible'), 100);
     }
 }
 
 /**
  * Sets up the visual effects based on weather.
  */
-function makeWeatherEffects(weather) {
-    weatherEffects.clearEffects();  // clear old effects first
+function updateWeatherEffects(weather) {
+    // clear old stuff first
+    weatherEffects.clearEffects();
     
-    // could use switch but if/else is fine
+    // check what weather it is
     if(weather.includes('rain') || weather.includes('drizzle')) {
         weatherEffects.startRain();
         celestialSystem.updateForWeather('clouds');
@@ -105,7 +122,8 @@ function makeWeatherEffects(weather) {
         weatherEffects.startCloudy();
         celestialSystem.updateForWeather('clouds');
     } else {
-        // no idea what this weather is, just clear everything
+        // no idea what weather this is
+        console.log('unknown weather:', weather);
         weatherEffects.clearEffects();
         celestialSystem.updateForWeather('clear');
     }
@@ -114,70 +132,70 @@ function makeWeatherEffects(weather) {
 /**
  * Updates the UI with weather info.
  */
-function showWeatherInfo(current, data) {
-    // convert temps
-    let fahrenheit = Math.round(current.main.temp);
-    let celsius = Math.round((fahrenheit - 32) * 5/9);
+function showCurrentWeather(current, data) {
+    // convert temperatures
+    let f = Math.round(current.main.temp);
+    let c = Math.round((f - 32) * 5/9);
     
-    // convert to freedom units
-    let visibility = (current.visibility / 1609).toFixed(1);
-    let pressure = (current.pressure * 0.02953).toFixed(2);
+    // convert to miles and inches
+    let vis = (current.visibility / 1609).toFixed(1);
+    let press = (current.pressure * 0.02953).toFixed(2);
 
-    let result = document.getElementById('weatherResult');
+    let box = document.getElementById('weatherResult');
     
-    // build the HTML - this is messy but works
-    let html = '<div class="weather-info-column">';
-    html += '<h2>' + data.city.name + ', ' + data.city.country + '</h2>';
-    html += '<div class="weather-main">';
-    html += '<img src="https://openweathermap.org/img/wn/' + current.weather[0].icon + '@2x.png"';
-    html += ' alt="' + current.weather[0].description + '" class="weather-icon">';
-    html += '<h3>' + current.weather[0].description + '</h3>';
-    html += '<div class="temperature-display" onclick="toggleTemperatureUnit(this)"';
-    html += ' data-temp-f="' + fahrenheit + '"';
-    html += ' data-temp-c="' + celsius + '"';
-    html += ' data-showing="F">';
-    html += fahrenheit + '°F</div></div>';
+    // build the html - messy but works
+    let str = '<div class="weather-info-column">';
+    str += '<h2>' + data.city.name + ', ' + data.city.country + '</h2>';
+    str += '<div class="weather-main">';
+    str += '<img src="https://openweathermap.org/img/wn/' + current.weather[0].icon + '@2x.png"';
+    str += ' alt="' + current.weather[0].description + '" class="weather-icon">';
+    str += '<h3>' + current.weather[0].description + '</h3>';
+    str += '<div class="temperature-display" onclick="toggleTemp(this)"';
+    str += ' data-temp-f="' + f + '"';
+    str += ' data-temp-c="' + c + '"';
+    str += ' data-showing="F">';
+    str += f + '°F</div></div>';
     
-    // add all the details
-    html += '<div class="weather-details">';
-    html += '<div class="detail"><i class="fas fa-tint"></i> Humidity: ' + current.main.humidity + '%</div>';
-    html += '<div class="detail"><i class="fas fa-wind"></i> Wind: ' + Math.round(current.wind.speed) + ' mph</div>';
-    html += '<div class="detail"><i class="fas fa-eye"></i> Visibility: ' + visibility + ' mile' + (visibility === "1.0" ? "" : "s") + '</div>';
-    html += '<div class="detail"><i class="fas fa-compress-alt"></i> Pressure: ' + pressure + ' inHg</div>';
-    html += '<div class="detail"><i class="fas fa-thermometer-half"></i> Feels like: ' + Math.round(current.main.feels_like) + '°F</div>';
-    html += '</div>';
+    // add details
+    str += '<div class="weather-details">';
+    str += '<div class="detail"><i class="fas fa-tint"></i> Humidity: ' + current.main.humidity + '%</div>';
+    str += '<div class="detail"><i class="fas fa-wind"></i> Wind: ' + Math.round(current.wind.speed) + ' mph</div>';
+    str += '<div class="detail"><i class="fas fa-eye"></i> Visibility: ' + vis + ' mile' + (vis === "1.0" ? "" : "s") + '</div>';
+    str += '<div class="detail"><i class="fas fa-compress-alt"></i> Pressure: ' + press + ' inHg</div>';
+    str += '<div class="detail"><i class="fas fa-thermometer-half"></i> Feels like: ' + Math.round(current.main.feels_like) + '°F</div>';
+    str += '</div>';
     
-    // add the clothing button
-    html += '<button onclick="showClothingTips(\'' + current.weather[0].main.toLowerCase() + '\')" class="suggestion-btn">';
-    html += '<i class="fas fa-tshirt"></i> Clothing Recommendations</button>';
-    html += '</div>';
+    // add clothing button
+    str += '<button onclick="showClothingTips(\'' + current.weather[0].main.toLowerCase() + '\')" class="suggestion-btn">';
+    str += '<i class="fas fa-tshirt"></i> What to Wear?</button>';
+    str += '</div>';
     
-    // add the city image section
-    html += '<div class="city-image-column">';
-    html += '<img class="city-image" src="" alt="' + data.city.name + '" id="cityImage">';
-    html += '</div>';
+    // add image section
+    str += '<div class="city-image-column">';
+    str += '<img class="city-image" src="" alt="' + data.city.name + '" id="cityImage">';
+    str += '</div>';
 
-    result.innerHTML = html;
+    box.innerHTML = str;
 }
 
 /**
  * Switches between F and C when clicked.
  */
-function toggleTemperatureUnit(element) {
-    let tempF = element.dataset.tempF;
-    let tempC = element.dataset.tempC;
-    let currentUnit = element.dataset.showing;
+function toggleTemp(el) {
+    let f = el.dataset.tempF;
+    let c = el.dataset.tempC;
+    let current = el.dataset.showing;
 
-    if(currentUnit === 'F') {
-        element.textContent = tempC + '°C';
-        element.dataset.showing = 'C';
+    if(current === 'F') {
+        el.textContent = c + '°C';
+        el.dataset.showing = 'C';
     } else {
-        element.textContent = tempF + '°F';
-        element.dataset.showing = 'F';
+        el.textContent = f + '°F';
+        el.dataset.showing = 'F';
     }
 
-    // fun little pop animation
-    gsap.to(element, { 
+    // fun animation
+    gsap.to(el, { 
         scale: 1.2, 
         duration: 0.15, 
         yoyo: true, 
@@ -256,7 +274,7 @@ function showClothingTips(weather) {
 /**
  * Gets a nice picture of the city.
  */
-async function getAndSetCityPic(cityName) {
+async function getCityImage(cityName) {
     try {
         // unsplash api - free but rate limited
         let response = await fetch(

@@ -1,217 +1,261 @@
-// handles all the fancy rain/snow stuff
-// probably should split this into separate files but whatever
-class PixiWeatherEffects {
-    constructor() {
-        this.app = this._setupPixiApp();
-        this.drops = [];  // old name but keeping it
-        this.active = false;
-        this.textures = {};
-        this.particles = [];
-        
-        // for when stuff breaks
-        window.debugWeather = this;
-    }
+// handles all the fancy weather effects and stuff
+// probably should clean this up someday but it works ¯\_(ツ)_/¯
+let PixiWeatherEffects = function() {
+    // basic stuff we need
+    let app = null;
+    let particles = [];  // holds all the weather thingies
+    let isActive = false;
+    let textureStuff = {};
+    
+    // for when things break
+    window.debugWeather = {
+        getApp: () => app,
+        countParticles: () => particles.length,
+        textures: () => textureStuff
+    };
 
-    // sets up the pixi canvas thing
-    _setupPixiApp() {
-        let app = new PIXI.Application({
-            width: innerWidth,
-            height: innerHeight,
+    // makes the canvas where stuff happens
+    function setupCanvas() {
+        // make pixi do its thing
+        let pixiApp = new PIXI.Application({
+            width: window.innerWidth,  // just grab the whole window
+            height: window.innerHeight,
             transparent: true,
             backgroundAlpha: 0,
-            resizeTo: window
+            resizeTo: window  // makes it resize automatically
         });
 
-        app.view.id = 'weatherCanvas';
-        
-        // make it look right - might need to adjust these later
-        app.view.style.position = 'fixed';
-        app.view.style.top = '0';
-        app.view.style.left = '0';
-        app.view.style.pointerEvents = 'none';
-        app.view.style.zIndex = '1';
+        // make it look right
+        let canvas = pixiApp.view;
+        canvas.id = 'weatherCanvas';
+        canvas.style.position = 'fixed';
+        canvas.style.top = '0px';  // gotta have the px or it looks weird
+        canvas.style.left = '0px';
+        canvas.style.pointerEvents = 'none';
+        canvas.style.zIndex = '1';  // might need to change this later idk
 
-        document.body.appendChild(app.view);
-        return app;
+        // stick it on the page
+        document.body.appendChild(canvas);
+        return pixiApp;
     }
 
-    // loads all the particle images
-    // TODO: maybe add more effects later?
-    async loadTextures() {
-        // Update path to point directly to files in root
-        const path = '.';  // or just use empty string ''
+    // loads all the particle pictures
+    async function loadAllTextures() {
+        console.log('🎨 loading textures...');
         
-        // which image to use for what
-        const files = {
-            rain: 'trace_01.png',
-            snow: 'star_09.png',
-            cloud: 'smoke_08.png',
-            lightning: 'spark_05.png'
+        let basePath = './assets/textures';
+        let textureFiles = {
+            rain: 'trace_01.png',    // this one looks like rain kinda
+            snow: 'star_09.png',     // stars make good snowflakes
+            cloud: 'smoke_08.png',   // smokey looking clouds
+            lightning: 'spark_05.png' // maybe use this later?
         };
 
         try {
-            console.log('Starting texture loading from root');
-            let texturePromises = [];
+            // try loading everything at once
+            let loadPromises = [];
             
-            for(let [key, file] of Object.entries(files)) {
-                console.log('Attempting to load:', file);
-                texturePromises.push(
-                    PIXI.Assets.load(file)  // Just use filename directly
-                        .then(tex => {
-                            console.log(`Successfully loaded ${key} texture`);
-                            return [key, tex];
-                        })
+            // loop through files
+            let i = 0;
+            for(let type in textureFiles) {
+                let file = textureFiles[type];
+                console.log(`trying texture ${++i}: ${file}`);
+                
+                loadPromises.push(
+                    PIXI.Assets.load(basePath + '/' + file)
+                        .then(texture => [type, texture])
                 );
             }
             
-            let loaded = await Promise.all(texturePromises);
-            this.textures = Object.fromEntries(loaded);
-            console.log('All textures loaded successfully:', Object.keys(this.textures));
-        } catch (err) {
-            console.error("Texture loading failed:", err);
-            this.textures = {
-                rain: PIXI.Texture.WHITE,
-                snow: PIXI.Texture.WHITE,
-                cloud: PIXI.Texture.WHITE,
-                lightning: PIXI.Texture.WHITE
-            };
+            // wait for all the loading
+            let results = await Promise.all(loadPromises);
+            textureStuff = Object.fromEntries(results);
+            
+            console.log('✨ loaded textures:', Object.keys(textureStuff).join(', '));
+            
+        } catch (oops) {
+            // uh oh, something broke
+            console.error("😱 texture loading failed:", oops);
+            
+            // just use white boxes instead
+            let types = ['rain', 'snow', 'cloud', 'lightning'];
+            types.forEach(type => {
+                textureStuff[type] = PIXI.Texture.WHITE;
+            });
         }
     }
 
     // make it rain!
-    startRain() {
-        console.log('☔ starting rain');
-        let rainSettings = {
-            alpha: 0.5,  // how visible
-            scale: 0.2,  // how big
-            speed: () => 15 + (Math.random() * 10)  // how fast
+    function doRain() {
+        console.log('☔ making it rain');
+        
+        // rain settings - might need to tweak these
+        let settings = {
+            alpha: 0.5,
+            scale: 0.2,
+            speed: () => 15 + (Math.random() * 10),
+            count: 100
         };
         
-        this.startEffect(100, 'rain', rainSettings);  // 100 drops seems good
+        makeParticles('rain', settings);
     }
 
-    // let it snow ❄️
-    startSnow() {
-        let snowCount = 50;  // looks nice with 50
+    // let it snow!
+    function doSnow() {
+        console.log('❄️ snow time');
         
-        this.startEffect(snowCount, 'snow', {
+        makeParticles('snow', {
             alpha: 0.8,
             scale: 0.15,
             speed: () => 2 + Math.random() * 2,
-            drift: () => Math.random() - 0.5  // makes it float side to side
+            drift: () => Math.random() - 0.5,  // makes it float side to side
+            count: 50
         });
     }
 
-    // cloudy with a chance of meatballs
-    startCloudy() {
-        this.startEffect(5, 'cloud', {
+    // make some clouds
+    function doClouds() {
+        console.log('☁️ cloudy weather');
+        
+        makeParticles('cloud', {
             alpha: 0.6,
             scale: 1.5,
-            speed: () => 0.5 + Math.random() * 10
+            speed: () => 0.5 + Math.random() * 10,
+            count: 5
         });
     }
 
-    // does the actual work of creating particles
-    startEffect(howMany, whatType, settings) {
-        if (!this.textures[whatType]) {
-            console.error('oops, missing texture for ' + whatType);
+    // does the actual particle creation
+    function makeParticles(type, settings) {
+        // make sure we have the texture
+        if (!textureStuff[type]) {
+            console.error('missing texture for ' + type + ' 😢');
             return;
         }
         
-        // clean up old stuff first
-        this.clearEffects();
-        this.active = true;
+        // cleanup old stuff
+        cleanup();
+        isActive = true;
 
         // make all the particles
-        for (let i = 0; i < howMany; i++) {
-            let particle = new PIXI.Sprite(this.textures[whatType]);
+        let count = settings.count;
+        while(count--) {  // counting down is faster (probably)
+            let particle = new PIXI.Sprite(textureStuff[type]);
             
             // basic setup
             particle.alpha = settings.alpha;
             particle.scale.set(settings.scale);
             
-            // put it somewhere
-            if (whatType === 'rain' || whatType === 'snow') {
-                // start above screen
-                particle.x = Math.random() * this.app.screen.width;
-                particle.y = -20;
-            } else if (whatType === 'cloud') {
-                // start at left side
-                particle.x = -particle.width;
-                particle.y = Math.random() * (this.app.screen.height / 3);
+            // position it based on type
+            if (type === 'rain' || type === 'snow') {
+                particle.x = Math.random() * app.screen.width;
+                particle.y = -20;  // start above screen
+            } else if (type === 'cloud') {
+                particle.x = -particle.width;  // start off screen
+                particle.y = Math.random() * (app.screen.height / 3);
             }
 
-            this.app.stage.addChild(particle);
+            app.stage.addChild(particle);
             
-            // keep track of this particle
-            let particleInfo = {
+            // save extra info we need
+            let info = {
                 sprite: particle,
                 speed: settings.speed(),
-                type: whatType
+                type: type
             };
             
-            // snow needs extra drift
+            // snow needs drift
             if (settings.drift) {
-                particleInfo.drift = settings.drift();
+                info.drift = settings.drift();
             }
             
-            this.particles.push(particleInfo);
+            particles.push(info);
         }
 
-        // start the animation loop
-        requestAnimationFrame(() => this.animate());
+        // start moving everything
+        requestAnimationFrame(updateParticles);
     }
 
-    // moves everything around
-    // this could probably be optimized but eh
-    animate() {
-        if (!this.active) return;
+    // moves all the particles
+    function updateParticles() {
+        if (!isActive) return;
 
-        for (let p of this.particles) {
-            // everything falls down
-            p.sprite.y += p.speed;
+        // update each particle
+        for (let i = 0; i < particles.length; i++) {
+            let p = particles[i];
+            p.sprite.y += p.speed;  // everything falls down
 
-            if (p.type === 'rain') {
-                // reset rain when it hits bottom
-                if (p.sprite.y > this.app.screen.height) {
-                    p.sprite.x = Math.random() * this.app.screen.width;
-                    p.sprite.y = -20;
-                }
-            } 
-            else if (p.type === 'snow') {
-                // snow drifts and spins
-                p.sprite.x += p.drift;
-                p.sprite.rotation += 0.01;
-                if (p.sprite.y > this.app.screen.height) {
-                    p.sprite.x = Math.random() * this.app.screen.width;
-                    p.sprite.y = -20;
-                }
-            } 
-            else if (p.type === 'cloud') {
-                // clouds move right
-                p.sprite.x += p.speed;
-                if (p.sprite.x > this.app.screen.width) {
-                    p.sprite.x = -p.sprite.width;
-                    p.sprite.y = Math.random() * (this.app.screen.height / 3);
-                }
+            switch(p.type) {
+                case 'rain':
+                    // reset rain at bottom
+                    if (p.sprite.y > app.screen.height) {
+                        p.sprite.x = Math.random() * app.screen.width;
+                        p.sprite.y = -20;
+                    }
+                    break;
+                    
+                case 'snow':
+                    // make snow float and spin
+                    p.sprite.x += p.drift;
+                    p.sprite.rotation += 0.01;
+                    
+                    // reset at bottom
+                    if (p.sprite.y > app.screen.height) {
+                        p.sprite.x = Math.random() * app.screen.width;
+                        p.sprite.y = -20;
+                    }
+                    break;
+                    
+                case 'cloud':
+                    // clouds go right
+                    p.sprite.x += p.speed;
+                    
+                    // reset at right edge
+                    if (p.sprite.x > app.screen.width) {
+                        p.sprite.x = -p.sprite.width;
+                        p.sprite.y = Math.random() * (app.screen.height / 3);
+                    }
+                    break;
             }
         }
 
-        requestAnimationFrame(() => this.animate());
+        requestAnimationFrame(updateParticles);
     }
 
-    // clean everything up
-    clearEffects() {
-        this.active = false;
+    // cleanup
+    function cleanup() {
+        isActive = false;
         
-        // remove all particles
-        for (let p of this.particles) {
-            this.app.stage.removeChild(p.sprite);
+        // remove everything
+        let i = particles.length;
+        while(i--) {
+            app.stage.removeChild(particles[i].sprite);
         }
-        this.particles = [];
+        particles = [];
     }
-}
 
-// make it available everywhere
+    // initialize everything
+    app = setupCanvas();
+
+    // what other code can use
+    return {
+        loadTextures: loadAllTextures,
+        startRain: doRain,
+        startSnow: doSnow,
+        startCloudy: doClouds,
+        clearEffects: cleanup
+    };
+};
+
+// make it global
 let weatherEffects = new PixiWeatherEffects();
 window.weatherEffects = weatherEffects;  // for debugging
+
+// maybe add these later?
+/*
+TODO: 
+- Add thunder effects ⚡
+- Make rain splash when it hits ground 💦
+- Add wind that affects particles 🌪️
+- Rainbow effect when it's sunny after rain? 🌈
+*/

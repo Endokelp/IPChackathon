@@ -3,14 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather App</title>
+    <title>☀️ Better Weather.com ⛈️</title>
+    <!-- styles -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- theme toggle -->
+    <!-- dark/light mode switch thingy -->
     <div class="theme-switch-wrapper">
         <label class="theme-switch">
             <input type="checkbox" id="themeToggle">
+            <!-- slider with icons -->
             <div class="slider round">
                 <i class="fas fa-sun"></i>
                 <i class="fas fa-moon"></i>
@@ -18,34 +20,56 @@
         </label>
     </div>
 
+    <!-- background stuff -->
     <div id="cityBackground"></div>
+    
+    <!-- sun/moon container -->
     <div id="celestialContainer" class="celestial-container">
         <div id="celestialBody" class="celestial-body"></div>
     </div>
     
+    <!-- weather effects go here -->
     <canvas id="weatherCanvas"></canvas>
 
+    <!-- main content -->
     <div class="container">
+        <!-- search box at the top -->
         <div class="search-box">
-            <h1>Weather App</h1>
+            <h1>⛅ Better Weather.com</h1>
             <div class="input-group">
-                <input type="text" id="cityInput" placeholder="City name" autofocus>
-                <button onclick="getWeatherStuff()">🔍</button>
+                <input 
+                    type="text" 
+                    id="cityInput" 
+                    placeholder="Enter a city name..." 
+                    autofocus
+                >
+                <button onclick="fetchWeather()">
+                    🔍
+                </button>
             </div>
         </div>
 
-        <div id="weatherResult" class="weather-card"></div>
+        <!-- weather results show up here -->
+        <div id="weatherResult" class="weather-card">
+            <!-- js fills this in -->
+        </div>
     </div>
 
-    <!-- libs -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
+    <!-- libraries we need -->
+    <script src="https://cdnjs.cloudflare./ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- probably don't need draggable but might use it later -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/Draggable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
     
-    <!-- our stuff -->
-    <script src="celestial.js"></script>
-    <script src="weather-effects-pixi.js"></script>
-    <script src="script.js"></script>
+    <!-- our code -->
+    <script src="celestial.js"></script>      <!-- handles sun/moon -->
+    <script src="weather-effects-pixi.js"></script>  <!-- fancy effects -->
+    <script src="script.js"></script>         <!-- everything else -->
+
+    <!-- maybe add these later:
+    <script src="animations.js"></script>
+    
+    -->
 </body>
 </html>

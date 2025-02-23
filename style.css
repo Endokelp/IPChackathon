@@ -1,66 +1,82 @@
-/* basic reset */
-* { margin: 0; padding: 0; box-sizing: border-box; }
+/* reset everything cuz browsers are weird */
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+}
 
+/* basic page setup */
 body {
     min-height: 100vh;
-    font-family: sans-serif;
+    font-family: sans-serif;  /* maybe change this later */
     background: #088dec;
     color: #fff;
     transition: .3s;
 }
 
-/* themes */
-.dark-theme { background: #1a1a1a !important; }
-.light-theme { background: linear-gradient(135deg, #3a6fc6, #5b9be6) !important; }
+/* dark/light themes */
+.dark-theme { 
+    background: #1a1a1a !important; 
+}
+.light-theme { 
+    background: linear-gradient(135deg, #3a6fc6, #5b9be6) !important; 
+    /* might need to tweak these colors */
+}
 
-/* layout */
+/* main container */
 .container {
     padding: 20px;
     max-width: 800px;
     margin: auto;
     position: relative;
-    z-index: 2;
+    z-index: 2;  /* keep it above effects */
 }
 
-/* weather canvas */
+/* where the weather effects happen */
 #weatherCanvas {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    pointer-events: none;
+    pointer-events: none;  /* let clicks go through */
     z-index: 1;
 }
 
-/* search box */
+/* search box at the top */
 .search-box {
     text-align: center;
     margin-bottom: 30px;
-    background: #ffffff1a;
+    background: #ffffff1a;  /* semi transparent white */
     padding: 20px;
     border-radius: 15px;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);  /* fancy blur effect */
     box-shadow: 0 8px 32px #1f238759;
 }
 
-.search-box h1 { margin-bottom: 20px; }
+/* space under the title */
+.search-box h1 { 
+    margin-bottom: 20px; 
+}
 
+/* search input layout */
 .input-group {
     display: flex;
     gap: 10px;
     justify-content: center;
 }
 
+/* text input styling */
 .input-group input {
     padding: 10px;
-    border: none;
+    border: none;  /* borders look weird here */
     border-radius: 5px;
     background: #ffffff33;
     color: white;
     width: 200px;
 }
 
+/* search button */
 .input-group button {
     padding: 10px 20px;
     border: none;
@@ -70,7 +86,7 @@ body {
     cursor: pointer;
 }
 
-/* weather card */
+/* where weather info shows up */
 .weather-card {
     background: #ffffff1a;
     padding: 20px;
@@ -78,19 +94,20 @@ body {
     backdrop-filter: blur(10px);
     box-shadow: 0 8px 32px #1f238759;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr;  /* two columns */
     gap: 20px;
     transform: translateY(20px);
     opacity: 0;
     transition: .5s;
 }
 
+/* fade in animation */
 .weather-card.visible {
     transform: translateY(0);
     opacity: 1;
 }
 
-/* city image */
+/* city picture container */
 .city-image-column {
     height: 400px;
     border-radius: 15px;
@@ -98,6 +115,7 @@ body {
     box-shadow: 0 8px 32px #1f238759;
 }
 
+/* make images look nice */
 .city-image {
     width: 100%;
     height: 100%;
@@ -105,11 +123,12 @@ body {
     transition: .3s;
 }
 
+/* hover effect on images */
 .city-image:hover {
     transform: scale(1.05);
 }
 
-/* sun/moon */
+/* sun/moon in corner */
 .celestial-container {
     position: fixed;
     top: 20px;
@@ -119,10 +138,11 @@ body {
     z-index: 2;
 }
 
+/* the actual sun/moon */
 .celestial-body {
     width: 60px;
     height: 60px;
-    background: #FFE87C;
+    background: #FFE87C;  /* sunny yellow color */
     border-radius: 50%;
     box-shadow: 0 0 20px #FFE87C;
     cursor: pointer;
@@ -133,14 +153,15 @@ body {
     transition: .3s;
 }
 
-/* theme switch */
+/* theme switch container */
 .theme-switch-wrapper {
     position: fixed;
     top: 20px;
     left: 20px;
-    z-index: 100;
+    z-index: 100;  /* always on top */
 }
 
+/* the switch itself */
 .theme-switch {
     display: inline-block;
     position: relative;
@@ -148,8 +169,12 @@ body {
     height: 34px;
 }
 
-.theme-switch input { display: none; }
+/* hide default checkbox */
+.theme-switch input { 
+    display: none; 
+}
 
+/* slider background */
 .slider {
     position: absolute;
     cursor: pointer;
@@ -164,6 +189,7 @@ body {
     justify-content: space-around;
 }
 
+/* slider button */
 .slider:before {
     content: "";
     position: absolute;
@@ -175,14 +201,20 @@ body {
     transition: .4s;
 }
 
+/* move slider when checked */
 input:checked + .slider:before {
     transform: translateX(26px);
 }
 
-.round { border-radius: 34px; }
-.round:before { border-radius: 50%; }
+/* round corners */
+.round { 
+    border-radius: 34px; 
+}
+.round:before { 
+    border-radius: 50%; 
+}
 
-/* popup */
+/* clothing suggestion popup */
 .suggestion-popup {
     position: fixed;
     top: 50%;
@@ -193,9 +225,10 @@ input:checked + .slider:before {
     border-radius: 10px;
     backdrop-filter: blur(10px);
     box-shadow: 0 8px 32px #1f238759;
-    z-index: 1000;
+    z-index: 1000;  /* above everything */
 }
 
+/* close button */
 .suggestion-popup button {
     margin-top: 10px;
     padding: 5px 10px;
@@ -206,27 +239,33 @@ input:checked + .slider:before {
     cursor: pointer;
 }
 
-/* weather details */
+/* weather details grid */
 .weather-details {
     display: grid;
     gap: 10px;
     margin: 20px 0;
 }
 
+/* temperature display */
 .temperature-display {
     font-size: 2em;
     cursor: pointer;
     display: inline-block;
 }
 
-/* make it work on phones
+/*note: used AI to make the phone thing completely
+/* phone styles - maybe fix these later
 @media (max-width: 768px) {
-    .weather-card { grid-template-columns: 1fr; }
-    .city-image-column { height: 200px; }
+    .weather-card { 
+        grid-template-columns: 1fr; 
+    }
+    .city-image-column { 
+        height: 200px; 
+    }
 } 
-    */
+*/
 
-/* Clothing suggestion button styling */
+/* clothing button */
 .suggestion-btn {
     background: #ffffff33;
     color: white;
@@ -243,21 +282,27 @@ input:checked + .slider:before {
     backdrop-filter: blur(5px);
 }
 
+/* button hover effect */
 .suggestion-btn:hover {
     background: #ffffff55;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
+/* button click effect */
 .suggestion-btn:active {
     transform: translateY(0px);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
+/* icon animation */
 .suggestion-btn i {
     transition: transform 0.3s ease;
 }
-
 .suggestion-btn:hover i {
     transform: rotate(10deg);
 }
+
+/* TODO: add dark mode specific colors */
+/* TODO: maybe add some animations */
+/* TODO: fix mobile layout */
